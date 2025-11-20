@@ -1,4 +1,5 @@
-from variable import Variable
+from NN import Variable
+from NN import MLP
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -209,21 +210,30 @@ def test11():
     plt.show() 
 
     
+def test12():
+    mlp = MLP(3, [4,4,2,1])
+    x = [[1,2,3],
+         [2,3,4],
+         [4,5,6]]
+    
+    y= [6,9,15]
 
+    mlp.fit(x,y, epochs=5)
     
     
     
 
 if __name__ == "__main__":
-    test1()
-    test2()
-    test3()
-    test4()
-    test5()
-    test6()
-    test7()
+    # test1()
+    # test2()
+    # test3()
+    # test4()
+    # test5()
+    # test6()
+    # test7()
 
-    test8()
-    test9()
-    test10()
-    test11()
+    # test8()
+    # test9()
+    # test10()
+    # test11()
+    test12()
