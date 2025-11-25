@@ -9,6 +9,17 @@ class Dense:
     def __call__(self, inputs):
         self.output = np.dot(inputs, self.weights) + self.baises
         return self.output
+    
+    def forward(self, inputs):
+        self.inputs = inputs
+        self.output = np.dot(inputs, self.weights) + self.baises
+        return self.output
+         
+    def backward(self):
+        self.grad = self.inputs
+
+
+
 
     def __repr__(self):
         return f"Dense Layer ({self.weights.shape[0]} -> {self.weights.shape[1]})"

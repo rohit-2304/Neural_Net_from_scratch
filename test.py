@@ -236,4 +236,7 @@ if __name__ == "__main__":
     # test9()
     # test10()
     # test11()
-    test12()
+    print(1e-7)
+    print(1 - 1e-7)
+    print(1 + 1e-7)
+    #test12()
