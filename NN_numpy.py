@@ -153,15 +153,17 @@ class CrossEntropyLoss(Loss):
         negative_log_likelihoods = -np.log(correct_confidences)
         return negative_log_likelihoods
     
-    def backward(self, prev_grads, y_true):
-        samples = len(prev_grads)    
-        labels = len(prev_grads[0])
+    def backward(self, y_pred, y_true):
+        samples = len(y_pred)       # number of samples m
+        labels = len(y_pred[0])     # number of classes c
+
+        # prev_grad shape = (m, c)
 
         # if labels are sparse convert to one hot encoding
         if len(y_true.shape) == 1:
             y_true = np.eye(labels)[y_true]         #[y_true] reorders the values of I to match the hot encoding
         
-        self.dinputs = -y_true / prev_grads
+        self.dinputs = -y_true / y_pred
 
         # normalization of gradients
         self.dinputs = self.dinputs/samples
