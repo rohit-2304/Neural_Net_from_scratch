@@ -236,7 +236,14 @@ if __name__ == "__main__":
     # test9()
     # test10()
     # test11()
-    print(1e-7)
-    print(1 - 1e-7)
-    print(1 + 1e-7)
+    
+    drelu = np.zeros((3,3))
+    drelu[[0,1,2],[2,0,1]] = 1
+    print(drelu)
+
+    da = np.random.rand(3,3)
+    print(da)
+
+    drelu_fin = np.dot(drelu, da)
+    print(drelu_fin)
     #test12()
