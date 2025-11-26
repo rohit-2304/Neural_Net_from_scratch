@@ -80,11 +80,47 @@ class Softmax:
         return self.output
     
     def forward(self, inputs):
-        # sofmax(xi) = e^-
+        # sofmax(xi) = e^-xi / sum(e^xj) j = 1 to n_neurons
         exp_values = np.exp(inputs - np.max(inputs, axis=1, keepdims=True)) # to prevent exploding gradients by preventing overflow from exponent function
         norm_values = exp_values/np.sum(exp_values, axis=1, keepdims=True)
         self.output = norm_values
         return self.output
+    
+    def backward(self, prev_grads):
+        # sofmax(xi) = e^-xi / sum(e^xj) j = 1 to n_neurons
+        # dsoftmax(xi)/dxi = softmax(xi)*(1-sofmax(xi))
+        # dsoftmax(xi)/dxj = -softmax(xi)*softmax(xj)
+
+        # dsoftmax(xi)dxj = softmax(xi)*(1-sofmax(xi))   i = j
+        #                 = -softmax(xi)*softmax(xj)    i != j
+        # Kronecker delta function dij = 1 if i = j 
+        #                              = 0 i!=j
+        # dsoftmax(xi)/dxj = softmax(xi)(dij - softmax(xj))
+        #                  = softmax(xi)dij - softmax(xi)softmax(xj)
+
+        # but xi = ipi - max
+        # dxi = 1
+
+        # prev_grads shape = (m , n_classes)
+        # self.output shape = (m, n_classes)
+        self.dinputs = np.empty_like(prev_grads)
+
+        # enumerate outputs and gradients
+        for index, (single_output, single_grad) in enumerate(zip(self.output, prev_grads)):
+            # flatten output array
+            single_output = single_output.reshape(-1,1) # col matrix
+            # Jacobian matrix is an array of partial derivatives in all of the combinations of both input vectors.
+            # Jacobian matrix of a vector-valued function of several variables is the matrix of all its first-order partial derivatives
+            # calculate jacobian matrix of the output s
+            # comes from jacobian matrix
+            jacobian_matrix = np.diagflat(single_output) - np.dot(single_output, single_output.T)
+
+            # calculate sample-wise gradient
+            # and add it to the array of sample gradients
+            # here single grad is shape (1, )
+            # numpy treats it as column vector when it is on the left of dot product
+            self.dinputs[index] = np.dot(jacobian_matrix, single_grad)  # shape(n_classes, 1) but numpy gives shape (1, ) which will be row vector in out context
+
 
 
 # loss functions
@@ -102,21 +138,33 @@ class CrossEntropyLoss(Loss):
     def forward(self, y_pred, y_true):
         samples = len(y_pred)
 
-        # do this to prevent division by zero(log(0))
+        # to prevent division by zero(log(0))
         clipped_output = np.clip(y_pred, 1e-07, 1-1e-07)
 
         # Probablities for target values -
-        # only if categorical labels
+        # only if categorical labels    i.e true class index for each sample
         if len(y_true.shape) == 1:
             correct_confidences = clipped_output[range(samples), y_true]    # y_true only contains the incide of true class
-        elif len(y_true.shape) ==2:     #contains one-hot encoded labels
+        elif len(y_true.shape) ==2:     # contains one-hot encoded labels OR true probability distribution
             # mask the valus
             correct_confidences = np.sum(clipped_output*y_true, axis=1)
         
         #losses
         negative_log_likelihoods = -np.log(correct_confidences)
         return negative_log_likelihoods
+    
+    def backward(self, prev_grads, y_true):
+        samples = len(prev_grads)    
+        labels = len(prev_grads[0])
+
+        # if labels are sparse convert to one hot encoding
+        if len(y_true.shape) == 1:
+            y_true = np.eye(labels)[y_true]         #[y_true] reorders the values of I to match the hot encoding
         
+        self.dinputs = -y_true / prev_grads
+
+        # normalization of gradients
+        self.dinputs = self.dinputs/samples
   
 
 # regularization
