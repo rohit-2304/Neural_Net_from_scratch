@@ -727,10 +727,8 @@ class Model:
             val_loss = self.loss.calculated_accumulated()
             val_accuracy = self.accuracy.calculate_accumulated()
             print(f'Val Loss = {val_loss}\tAcc = {val_accuracy}')
-            
-
-            
-    
+    def temp(self):
+        pass    
     def forward(self, X, training = True):
         self.input_layer.forward(X)
         for layer in self.layers:
