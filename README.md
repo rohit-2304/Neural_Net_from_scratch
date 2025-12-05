@@ -20,7 +20,7 @@ It is designed for educational purposes, demystifying the "black box" of framewo
 
 ## 📦 Installation
 
-You can install Ronet via pip (coming soon):
+You can install Ronet via pip:
 
 ```bash
 pip install ronet
