@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
-from NN_numpy import *
+from ronet.model import *
+from ronet import *
 from torch import nn
 import torch
 import torch.optim as optim
@@ -29,7 +30,7 @@ model.add(ReLU())
 model.add(Dense(12, 3))
 model.add(Softmax())
 
-model.set(loss = CrossEntropyLoss(), optimizer = Optimizer_Adam(learning_rate=0.001))
+model.set(loss = CrossEntropyLoss(), optimizer = Optimizer_Adam(learning_rate=0.001),accuracy=Accuracy_Classification())
 
 model.finalize()
 
@@ -62,6 +63,3 @@ for epoch in range(epochs):
     optimizer.step()
 
     print(f"Epoch {epoch+1}/{epochs}, Loss = {loss.item():.6f}")
-    
- def temp():
-    pass
