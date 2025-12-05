@@ -1,17 +1,51 @@
 import numpy as np
 
 class Optimizer:
-    def pre_update_params(self):
+    """
+    Base class for all optimizers.
+    """
+    def pre_update_params(self) -> None:
+        """
+        Called before parameter updates. Used for updating learning rate decay.
+        """
         pass
-    def update_params(self):
+
+    def update_params(self, layer) -> None:
+        """
+        Update the parameters (weights/biases) of the given layer.
+        """
         pass
-    def post_update_params(self):
+
+    def post_update_params(self) -> None:
+        """
+        Called after parameter updates. Used for stepping the iteration counter.
+        """
         pass
 
 class Optimizer_SGD(Optimizer):
+    """
+    Stochastic Gradient Descent (SGD) optimizer.
+
+    Supports Momentum and Learning Rate Decay.
+
+    Update Rule (with momentum):
+    v_{t} = \beta * v_{t-1} - \eta * \nabla J
+    W_{t} = W_{t-1} + v_{t}
+
+    Parameters
+    ----------
+    learning_rate : float
+        The initial learning rate ($\eta$). Default is 1.0.
+    decay : float
+        The decay rate for the learning rate over time ($1 / (1 + decay * step)$).
+    momentum : float
+        The momentum factor ($\beta$), usually between 0.5 and 0.9. 
+        Helps accelerate gradients in the right direction and dampens oscillations.
+    """
+    
     # momentum prevents model beign stuck in local minima
     # learning rate decay prevents exploding gradients
-    def __init__(self, learning_rate = 0.001, decay = 0., momentum = 0., epsion = 1e-7):
+    def __init__(self, learning_rate: float = 1.0, decay: float = 0., momentum: float = 0.):
         self.learning_rate = learning_rate
         self.current_learning_rate = learning_rate
         self.decay = decay
@@ -24,7 +58,14 @@ class Optimizer_SGD(Optimizer):
             self.current_learning_rate = self.learning_rate * (1. / (1. + self.decay * self.steps))
     
     def update_params(self, layer):
+        """
+        Performs the update on the layer's weights and biases.
 
+        Notes
+        -----
+        If momentum is used, this method initializes `weight_momentums` and 
+        `bias_momentums` attributes on the layer instance to store velocity.
+        """
         # if momentum is used
         if self.momentum_factor:
             # per parameter momentums
@@ -49,9 +90,20 @@ class Optimizer_SGD(Optimizer):
         self.steps += 1
 
 class Optimizer_Adagrad(Optimizer):
-    """Adagrad optimizer with learning rate decay support"""
-    # reduce the update size in ratio to the previous size of updates for each param
-    def __init__(self, learning_rate = 1e-3, decay=0., epsilon = 1e-7):
+    """
+    Adagrad Optimizer.
+
+    Adapts the learning rate to the parameters, performing smaller updates
+    (i.e. low learning rates) for parameters associated with frequently occurring
+    features, and larger updates (i.e. high learning rates) for parameters
+    associated with infrequent features.
+
+    Formula:
+    Cache += (gradient)^2
+    W += -learning_rate * gradient / (sqrt(Cache) + epsilon)
+    """
+     # reduce the update size in ratio to the previous size of updates for each param
+    def __init__(self, learning_rate: float = 1.0, decay: float = 0., epsilon: float = 1e-7):
         self.learning_rate = learning_rate
         self.current_learning_rate = learning_rate
         self.decay = decay
@@ -76,16 +128,34 @@ class Optimizer_Adagrad(Optimizer):
         layer.weights += -(self.current_learning_rate * layer.dweights)/(np.sqrt(layer.weight_cache )+ self.epsilon)
         layer.biases += -(self.current_learning_rate * layer.dbiases)/(np.sqrt(layer.bias_cache) + self.epsilon)
 
-    def post_udpate_params(self):
+    def post_update_params(self):
         self.steps += 1
 
 class Optimizer_RMSProp(Optimizer):
+    """
+    RMSProp Optimizer.
+
+    Maintains a moving average of the squared gradients to normalize the gradient.
+    This resolves Adagrad's radically diminishing learning rates.
+
+    Formula:
+    Cache = rho * Cache + (1 - rho) * (gradient)^2
+    W += -learning_rate * gradient / (sqrt(Cache) + epsilon)
+
+    Parameters
+    ----------
+    rho : float
+        Decay rate for the moving average of squared gradients. Default 0.9.
+    epsilon : float
+        Small value to prevent division by zero.
+    """
+    
     # Slows down oscillations in dimensions where it high
     # reduce the update size in ratio to the previous size of updates for each param , but in a better way
     # adds a mechanism similar to momentum 
     # calculates per param learning rate 
     # retains global direction and slows changes in direction
-    def __init__(self, learning_rate = 1e-03, decay = 0., rho = 0.9, epsilon = 1e-07):
+    def __init__(self, learning_rate: float = 0.001, decay: float = 0., rho: float = 0.9, epsilon: float = 1e-7):
         self.learning_rate = learning_rate
         self.current_learning_rate = learning_rate
         self.decay = decay
@@ -114,7 +184,23 @@ class Optimizer_RMSProp(Optimizer):
         self.steps += 1
 
 class Optimizer_Adam(Optimizer):
-    def __init__(self, learning_rate = 1e-03, decay = 0.,  epsilon = 1e-07, beta_1 = 0.9, beta_2 = 0.9999):
+    """
+    Adam (Adaptive Moment Estimation) Optimizer.
+
+    Combines the advantages of AdaGrad and RMSProp. It calculates an exponential 
+    moving average of the gradient and the squared gradient.
+
+    Parameters
+    ----------
+    beta_1 : float
+        Exponential decay rate for the first moment estimates (momentum). Default 0.9.
+    beta_2 : float
+        Exponential decay rate for the second moment estimates (cache). Default 0.999.
+    epsilon : float
+        Small value to prevent division by zero.
+    """
+    def __init__(self, learning_rate: float = 0.001, decay: float = 0., epsilon: float = 1e-7, 
+                 beta_1: float = 0.9, beta_2: float = 0.999):
         self.learning_rate = learning_rate
         self.current_learning_rate = learning_rate
         self.decay = decay
